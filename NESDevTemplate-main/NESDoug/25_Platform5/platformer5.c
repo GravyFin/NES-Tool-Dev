@@ -90,39 +90,9 @@ void main (void) {
 
 
 
-void load_room(void){
-	set_data_pointer(Rooms[0]);
-	set_mt_pointer(metatiles1); 
-	for(y=0; ;y+=0x20){
-		for(x=0; ;x+=0x20){
-			address = get_ppu_addr(0, x, y);
-			index = (y & 0xf0) + (x >> 4);
-			buffer_4_mt(address, index); // ppu_address, index to the data
-			flush_vram_update2();
-			if (x == 0xe0) break;
-		}
-		if (y == 0xe0) break;
-	}
-	
-	
-	
-	// a little bit in the next room
-	set_data_pointer(Rooms[1]);
-	for(y=0; ;y+=0x20){
-		x = 0;
-		address = get_ppu_addr(1, x, y);
-		index = (y & 0xf0);
-		buffer_4_mt(address, index); // ppu_address, index to the data
-		flush_vram_update2();
-		if (y == 0xe0) break;
-	}
-	
-	// copy the room to the collision map
-	// the second one should auto-load with the scrolling code
-	memcpy (c_map, Rooms[0], 240);
-	
-	
-	sprite_obj_init();
+void load_room(void)
+{
+
 }
 
 

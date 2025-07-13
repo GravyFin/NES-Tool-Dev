@@ -148,20 +148,22 @@ const unsigned char palette_sp[]={
 // 				0100 0000 = all collision, solid
 //				0000 0011 = palette
 
-const unsigned char metatiles1[]={
-	0, 0, 0, 0,  0,
-	2, 2, 2, 2,  3,
-	20, 20, 20, 20,  0,
-	5, 6, 21, 22,  1,
-	6, 6, 22, 22,  1,
-	6, 7, 22, 23,  1,
-	21, 22, 21, 22,  1,
-	22, 22, 22, 22,  1,
-	22, 23, 22, 23,  1,
-	8, 9, 24, 25,  1,
-	9, 9, 25, 25,  1,
-	9, 10, 25, 26,  1
-};
+///////////////////////////////
+
+//const unsigned char metatiles1[]={
+//	0, 0, 0, 0,  0,
+//	2, 2, 2, 2,  3,
+//	20, 20, 20, 20,  0,
+//	5, 6, 21, 22,  1,
+//	6, 6, 22, 22,  1,
+//	6, 7, 22, 23,  1,
+//	21, 22, 21, 22,  1,
+//	22, 22, 22, 22,  1,
+//	22, 23, 22, 23,  1,
+//	8, 9, 24, 25,  1,
+//	9, 9, 25, 25,  1,
+//	9, 10, 25, 26,  1
+//};
 
 #define COL_DOWN 0x80
 #define COL_ALL 0x40
@@ -183,11 +185,11 @@ const unsigned char is_solid[]={
 
 
 
-#include "BG/Room1.c"
-#include "BG/Room2.c"
-#include "BG/Room3.c"
-#include "BG/Room4.c"
-#include "BG/Room5.c"
+//#include "BG/Room1.c"
+//#include "BG/Room2.c"
+//#include "BG/Room3.c"
+//#include "BG/Room4.c"
+//#include "BG/Room5.c"
 
 #define MAX_ROOMS (5-1)
 #define MAX_SCROLL (MAX_ROOMS*0x100)-1
@@ -195,9 +197,9 @@ const unsigned char is_solid[]={
 // doubles as the collision map data
 
 
-const unsigned char * const Rooms[]= {
-	Room1, Room2, Room3, Room4, Room5
-};
+//const unsigned char * const Rooms[]= {
+//	Room1, Room2, Room3, Room4, Room5
+//};
 
 //y, room, x
 //y = TURN_OFF end of list
