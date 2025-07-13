@@ -13,25 +13,31 @@
 	.forceimport	__STARTUP__
 	.import		_pal_bg
 	.import		_pal_spr
+	.import		_ppu_wait_nmi
 	.import		_ppu_off
 	.import		_ppu_on_all
+	.import		_oam_clear
 	.import		_oam_meta_spr
+	.import		_pad_poll
 	.import		_bank_spr
-	.import		_bank_bg
 	.import		_vram_adr
 	.import		_vram_write
 	.export		_level1
 	.export		_palette
-	.export		_sprite_palette
-	.export		_player_sprite
+	.export		_player_sprite_idle
+	.export		_player_sprite_walk
 	.export		_player_data
+	.export		_pad1
+	.export		_moving
+	.export		_draw
+	.export		_move
 	.export		_main
 
 .segment	"DATA"
 
 _player_data:
-	.byte	$18
-	.byte	$C0
+	.byte	$10
+	.byte	$BF
 	.byte	$10
 	.byte	$10
 
@@ -1079,41 +1085,160 @@ _palette:
 	.byte	$0B
 	.byte	$1A
 	.byte	$29
-_sprite_palette:
-	.byte	$0F
+_player_sprite_idle:
 	.byte	$00
-	.byte	$10
-	.byte	$30
-	.byte	$0F
-	.byte	$18
-	.byte	$28
-	.byte	$38
-	.byte	$0F
+	.byte	$00
+	.byte	$04
+	.byte	$01
+	.byte	$00
+	.byte	$08
+	.byte	$14
+	.byte	$01
+	.byte	$08
+	.byte	$00
 	.byte	$05
-	.byte	$16
-	.byte	$27
-	.byte	$0F
-	.byte	$0B
-	.byte	$1A
-	.byte	$29
-_player_sprite:
+	.byte	$01
+	.byte	$08
+	.byte	$08
+	.byte	$15
+	.byte	$01
+	.byte	$80
+_player_sprite_walk:
 	.byte	$00
 	.byte	$00
 	.byte	$02
 	.byte	$01
 	.byte	$00
 	.byte	$08
-	.byte	$03
+	.byte	$12
 	.byte	$01
 	.byte	$08
 	.byte	$00
-	.byte	$12
+	.byte	$03
 	.byte	$01
 	.byte	$08
 	.byte	$08
 	.byte	$13
 	.byte	$01
 	.byte	$80
+
+.segment	"BSS"
+
+.segment	"ZEROPAGE"
+_pad1:
+	.res	1,$00
+_moving:
+	.res	1,$00
+
+; ---------------------------------------------------------------
+; void __near__ draw (unsigned char isMoving)
+; ---------------------------------------------------------------
+
+.segment	"CODE"
+
+.proc	_draw: near
+
+.segment	"CODE"
+
+;
+; {
+;
+	jsr     pusha
+;
+; oam_clear();
+;
+	jsr     _oam_clear
+;
+; if (isMoving == 1)
+;
+	ldy     #$00
+	lda     (sp),y
+	cmp     #$01
+	bne     L0002
+;
+; oam_meta_spr(player_data.x, player_data.y, player_sprite_walk);
+;
+	jsr     decsp2
+	lda     _player_data
+	iny
+	sta     (sp),y
+	lda     _player_data+1
+	dey
+	sta     (sp),y
+	lda     #<(_player_sprite_walk)
+	ldx     #>(_player_sprite_walk)
+;
+; else 
+;
+	jmp     L0004
+;
+; oam_meta_spr(player_data.x, player_data.y, player_sprite_idle);
+;
+L0002:	jsr     decsp2
+	lda     _player_data
+	iny
+	sta     (sp),y
+	lda     _player_data+1
+	dey
+	sta     (sp),y
+	lda     #<(_player_sprite_idle)
+	ldx     #>(_player_sprite_idle)
+L0004:	jsr     _oam_meta_spr
+;
+; }
+;
+	jmp     incsp1
+
+.endproc
+
+; ---------------------------------------------------------------
+; unsigned char __near__ move (void)
+; ---------------------------------------------------------------
+
+.segment	"CODE"
+
+.proc	_move: near
+
+.segment	"CODE"
+
+;
+; if (pad1 & PAD_LEFT)
+;
+	lda     _pad1
+	and     #$02
+	beq     L0006
+;
+; player_data.x--;
+;
+	dec     _player_data
+;
+; return 1;
+;
+	ldx     #$00
+	lda     #$01
+	rts
+;
+; else if (pad1 & PAD_RIGHT)
+;
+L0006:	lda     _pad1
+	ldx     #$00
+	and     #$01
+	beq     L0008
+;
+; player_data.x++;
+;
+	inc     _player_data
+;
+; return 1;
+;
+	lda     #$01
+	rts
+;
+; }
+;
+L0008:	rts
+
+.endproc
 
 ; ---------------------------------------------------------------
 ; void __near__ main (void)
@@ -1126,31 +1251,26 @@ _player_sprite:
 .segment	"CODE"
 
 ;
-; ppu_off(); // screen off
+; ppu_off(); 
 ;
 	jsr     _ppu_off
 ;
-; pal_bg(palette); // load the BG palette
+; pal_bg(palette); 
 ;
 	lda     #<(_palette)
 	ldx     #>(_palette)
 	jsr     _pal_bg
 ;
-; bank_spr(0);
+; pal_spr(palette);
 ;
-	lda     #$00
-	jsr     _bank_spr
+	lda     #<(_palette)
+	ldx     #>(_palette)
+	jsr     _pal_spr
 ;
-; bank_bg(1);
+; bank_spr(1); 
 ;
 	lda     #$01
-	jsr     _bank_bg
-;
-; pal_spr(sprite_palette);
-;
-	lda     #<(_sprite_palette)
-	ldx     #>(_sprite_palette)
-	jsr     _pal_spr
+	jsr     _bank_spr
 ;
 ; vram_adr(NAMETABLE_A);
 ;
@@ -1167,24 +1287,26 @@ _player_sprite:
 	lda     #$00
 	jsr     _vram_write
 ;
-; ppu_on_all(); // turn on screen
+; ppu_on_all(); 
 ;
 	jsr     _ppu_on_all
 ;
-; oam_meta_spr(player_data.x, player_data.y, player_sprite );
+; pad1 = pad_poll(0); // sets pad1 to slot 0 constroller
 ;
-L0002:	jsr     decsp2
-	lda     _player_data
-	ldy     #$01
-	sta     (sp),y
-	lda     _player_data+1
-	dey
-	sta     (sp),y
-	lda     #<(_player_sprite)
-	ldx     #>(_player_sprite)
-	jsr     _oam_meta_spr
+L0002:	lda     #$00
+	jsr     _pad_poll
+	sta     _pad1
 ;
-; while (1){
+; ppu_wait_nmi(); 
+;
+	jsr     _ppu_wait_nmi
+;
+; draw(move());
+;
+	jsr     _move
+	jsr     _draw
+;
+; while (1)
 ;
 	jmp     L0002
 
