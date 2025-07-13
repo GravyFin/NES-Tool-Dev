@@ -24,16 +24,14 @@
 // all variables should be global for speed
 // zeropage global is even faster
 
-const unsigned char palette[]=
-{
+const unsigned char palette[] = {
 BLACK, DK_GY, LT_GY, WHITE,
 BLACK,0x18,0x28,0x38,
 BLACK,0x05,0x16,0x27,
 BLACK,0x0B,0x1A,0x29
 }; 
 
-const unsigned char sprite_palette[]=
-{
+const unsigned char sprite_palette[] = {
 BLACK, DK_GY, LT_GY, WHITE,
 BLACK,0x18,0x28,0x38,
 BLACK,0x05,0x16,0x27,
