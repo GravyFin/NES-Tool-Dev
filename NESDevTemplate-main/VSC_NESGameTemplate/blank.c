@@ -1,11 +1,14 @@
 #include "LIB/neslib.h"
 #include "LIB/nesdoug.h" 
 #include "level1.h"
+#include "level2.h"
 
 #define BLACK 0x0f
 #define DK_GY 0x00
 #define LT_GY 0x10
 #define WHITE 0x30
+#define LEFT_BOUNDARY 0
+#define RIGHT_BOUNDARY 240
 
 #pragma bss-name(push, "ZEROPAGE")
 
@@ -46,13 +49,30 @@ struct sprite_data
 struct sprite_data player_data = {16, 191, 16, 16};
 
 unsigned char pad1;
-
 unsigned char moving;
+unsigned char frame_counter = 0;
+unsigned char anim_state = 0;
+unsigned char current_level = 1;
 
-void draw(unsigned char isMoving)
+void load_level(unsigned char level)
+{
+    ppu_off();
+    if (level == 1) {
+        vram_adr(NAMETABLE_A);
+        vram_write(level1, 1024);
+        player_data.x = RIGHT_BOUNDARY - player_data.width; // start near right edge
+    } else if (level == 2) {
+        vram_adr(NAMETABLE_A);
+        vram_write(level2, 1024);
+        player_data.x = LEFT_BOUNDARY; // start near left edge
+    }
+    ppu_on_all();
+}
+
+void draw(unsigned char isWalkFrame)
 {
 	oam_clear();
-	if (isMoving == 1)
+	if (isWalkFrame)
 	{
 		oam_meta_spr(player_data.x, player_data.y, player_sprite_walk);
 	}
@@ -78,30 +98,57 @@ unsigned char move()
 	{
 		return 0;
 	}
-	
+
 }
 
-void main (void) {
-	
-	ppu_off(); 
+void main(void)
+{
+    ppu_off();
 
-	pal_bg(palette); 
-	pal_spr(palette);
+    pal_bg(palette);
+    pal_spr(palette);
 
-	bank_spr(1);	
+    bank_spr(1);
 
-	vram_adr(NAMETABLE_A);
-	vram_write(level1, 1024);
+    // Initially load level 1
+    load_level(1);
+    current_level = 1;
 
-	ppu_on_all(); 
+    ppu_on_all();
 
-	while (1)
-	{	
-		pad1 = pad_poll(0); // sets pad1 to slot 0 constroller
-		ppu_wait_nmi(); 
-		draw(move());
-		
+    while(1)
+    {
+        pad1 = pad_poll(0);
+        ppu_wait_nmi();
+
+        moving = move();
+
+        if (current_level == 1 && player_data.x > RIGHT_BOUNDARY)
+		{
+   			 current_level = 2;
+  			  load_level(2);
+		}
+		else if (current_level == 2 && player_data.x <= LEFT_BOUNDARY)
+		{
+    		current_level = 1;
+    		load_level(1);
 	}
+
+        if (moving)
+        {
+            frame_counter++;
+            if (frame_counter >= 5)
+            {
+                frame_counter = 0;
+                anim_state ^= 1;
+            }
+        }
+        else
+        {
+            frame_counter = 0;
+            anim_state = 0;
+        }
+
+        draw(anim_state);
+    }
 }
-	
-	
